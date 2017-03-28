@@ -19,6 +19,10 @@ Stage flag is optional...
 
 Auto-scaling lambdas are deployed with scheduled events which run *every 1 minute for scale up* and *every 6 hours for scale down* by default. Schedule settings can be adjusted in serverless.yml file.
 
+### Add an API Key
+
+By default we protect all API endpoints, and the quickest way to get started is just API Gateway API Keys. Create a key, give it permissions to hit your stage. You leverage the key by passing it in with the `x-api-key` header on any requests to the Configuration REST API.
+
 ### Configuration REST API
 
 API gateway endpoints will be deployed to maintain auto-scaling configuration:
