@@ -1,0 +1,20 @@
+*~
+.idea
+.ds_store
+*.env*
+coverage
+
+
+# Logs
+logs
+*.log
+npm-debug.log
+
+# Dependency directory
+node_modules
+
+# IDE
+**/.idea
+
+# Serverless directory
+.serverless

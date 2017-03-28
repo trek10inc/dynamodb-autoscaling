@@ -1,0 +1,115 @@
+service: dynamodb-auto-scaling
+
+custom:
+  stage: ${opt:stage, self:provider.stage}
+  region: ${opt:region, self:provider.region}
+
+  rates:
+    up: ${self:custom.${self:custom.stage}.rates.up, self:provider.scalingSettings.rates.up}
+    down: ${self:custom.${self:custom.stage}.rates.down, self:provider.scalingSettings.rates.down}
+
+provider:
+  name: aws
+  runtime: nodejs4.3
+
+  stage: dev
+  region: us-east-1
+
+  scalingSettings:
+    rates:
+      up: 5 minutes
+      down: 6 hours
+
+    throughputs:
+      min: 1
+      max: 100
+      increase: 10
+      threshold: 0.8
+
+    analyzeTimespans:
+      up: 5 minutes
+      down: 30 minutes
+
+  configTableName: ddb-auto-scale-config
+
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:*
+      Resource: arn:aws:dynamodb:${self:custom.region}:*:table/*
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: arn:aws:logs:${self:custom.region}:*:*
+
+  environment:
+    STAGE: ${self:custom.stage}
+    REGION: ${self:custom.region}
+    TROUGHPUTS_MIN: ${self:provider.scalingSettings.throughputs.min}
+    TROUGHPUTS_MAX: ${self:provider.scalingSettings.throughputs.max}
+    TROUGHPUTS_INCREASE: ${self:provider.scalingSettings.throughputs.increase}
+    TROUGHPUTS_THRESHOLD: ${self:provider.scalingSettings.throughputs.threshold}
+    ANALYZE_TIMESPAN_UP: ${self:provider.scalingSettings.analyzeTimespans.up}
+    ANALYZE_TIMESPAN_DOWN: ${self:provider.scalingSettings.analyzeTimespans.down}
+    CONFIG_TABLE_NAME: ${self:provider.configTableName}-${self:custom.stage}
+
+functions:
+  scaleUp:
+    handler: handlers/scale-up.index
+    events:
+      - schedule: rate(${self:custom.rates.up})
+
+  scaleDown:
+    handler: handlers/scale-down.index
+    events:
+      - schedule: rate(${self:custom.rates.down})
+
+  configLoad:
+    handler: handlers/manage-config.load
+    events:
+      - http:
+          path: ddb-auto-scale/config
+          method: GET
+          private: true
+
+  configFetch:
+    handler: handlers/manage-config.fetch
+    events:
+      - http:
+          path: ddb-auto-scale/config/{tableName}
+          method: GET
+          private: true
+
+  configSave:
+    handler: handlers/manage-config.save
+    events:
+      - http:
+          path: ddb-auto-scale/config
+          method: POST
+          private: true
+
+  configDelete:
+    handler: handlers/manage-config.delete
+    events:
+      - http:
+          path: ddb-auto-scale/config/{tableName}
+          method: DELETE
+          private: true
+
+resources:
+  Resources:
+    ddbAutoScaleConfigTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.configTableName}-${self:custom.stage}
+        AttributeDefinitions:
+          - AttributeName: tableName
+            AttributeType: S
+        KeySchema:
+          - AttributeName: tableName
+            KeyType: HASH
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
