@@ -29,11 +29,11 @@ API gateway endpoints will be deployed to maintain auto-scaling configuration:
 
 `GET https://api.domain.name/ddb-auto-scale/config` - Load all available configuration records.
 
-`GET https://api.domain.name/ddb-auto-scale/config/{tabelName}` - Load configuration record for specified DynamoDB table.
+`GET https://api.domain.name/ddb-auto-scale/config/{tableName}` - Load configuration record for specified DynamoDB table.
 
 `POST https://api.domain.name/ddb-auto-scale/config` - Save configuration record for DynamoDB table (see [Configuration Data Structure](#config) section below).
 
-`DELETE https://api.domain.name/ddb-auto-scale/config/{tabelName}` - Delete configuration record for specified DynamoDB table.
+`DELETE https://api.domain.name/ddb-auto-scale/config/{tableName}` - Delete configuration record for specified DynamoDB table.
 
 ### <a name="config"></a>Configuration Data Structure
 
