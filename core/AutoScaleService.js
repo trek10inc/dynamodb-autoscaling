@@ -36,6 +36,9 @@ class AutoScaleService {
 
     if (!this.logger) throw new Error('logService is required');
     if (!this.configRepository) throw new Error('configRepository is required');
+
+    this.scaleUpTable = this.scaleUpTable.bind(this);
+    this.scaleDownTable = this.scaleDownTable.bind(this);
   }
 
   /**

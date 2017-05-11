@@ -10,7 +10,7 @@ custom:
 
 provider:
   name: aws
-  runtime: nodejs4.3
+  runtime: nodejs6.10
 
   stage: dev
   region: us-east-1
@@ -37,6 +37,10 @@ provider:
       Action:
         - dynamodb:*
       Resource: arn:aws:dynamodb:${self:custom.region}:*:table/*
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+      Resource: "*"
     - Effect: Allow
       Action:
         - logs:CreateLogGroup
