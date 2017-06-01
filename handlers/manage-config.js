@@ -6,11 +6,10 @@ const ddbOptions = { region: process.env.REGION };
 function response(callback) {
   return {
     send: function (promise) {
-      promise
-        .then(data => callback(null, {
-          statusCode: 200,
-          body: JSON.stringify(data),
-        })).catch(err => callback(err));
+      promise.then(data => callback(null, {
+        statusCode: 200,
+        body: JSON.stringify(data),
+      })).catch(err => callback(err));
     }
   };
 }

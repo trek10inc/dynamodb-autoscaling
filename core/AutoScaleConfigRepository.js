@@ -1,7 +1,6 @@
 'use strict';
 
 const aws = require('aws-sdk');
-const Promise = require('bluebird');
 const AutoScaleConfig = require('./AutoScaleConfig');
 
 let AUTO_SCALE_CONFIG_CACHE = null;
@@ -22,9 +21,7 @@ class AutoScaleConfigRepository {
     if (!this.tableName) throw new Error('Config table name is required');
 
     //create document DB instance
-    this.db = Promise.promisifyAll(
-      new aws.DynamoDB.DocumentClient(ddbOptions || {})
-    );
+    this.db = new aws.DynamoDB.DocumentClient(ddbOptions || {});
   }
 
   /**
@@ -36,9 +33,9 @@ class AutoScaleConfigRepository {
     if (AUTO_SCALE_CONFIG_CACHE && AUTO_SCALE_CONFIG_CACHE.length)
       return Promise.resolve(AUTO_SCALE_CONFIG_CACHE);
 
-    return this.db.scanAsync({
+    return this.db.scan({
       TableName: this.tableName
-    }).then(result => {
+    }).promise().then(result => {
       AUTO_SCALE_CONFIG_CACHE = result.Items.map(AutoScaleConfig.create);
       return AUTO_SCALE_CONFIG_CACHE;
     });
@@ -54,11 +51,11 @@ class AutoScaleConfigRepository {
     if (AUTO_SCALE_CONFIG_CACHE && AUTO_SCALE_CONFIG_CACHE.length)
       return Promise.resolve(AUTO_SCALE_CONFIG_CACHE.find(x => x.tableName === tableName));
 
-    return this.db.queryAsync({
+    return this.db.query({
       TableName: this.tableName,
       KeyConditionExpression: 'tableName = :tableName',
       ExpressionAttributeValues: { ':tableName': tableName }
-    }).then(result => AutoScaleConfig.create(result.Items[0]));
+    }).promise().then(result => AutoScaleConfig.create(result.Items[0]));
   }
 
   /**
@@ -70,10 +67,10 @@ class AutoScaleConfigRepository {
     if (config.constructor.name === 'Object')
       config = AutoScaleConfig.create(config);
 
-    return this.db.putAsync({
+    return this.db.put({
       TableName: this.tableName,
       Item: config
-    }).then(() => {
+    }).promise().then(() => {
       // empty cache
       AUTO_SCALE_CONFIG_CACHE = null;
       return true;
@@ -86,12 +83,14 @@ class AutoScaleConfigRepository {
    * @returns {Promise<Boolean>}
    */
   delete(tableName) {
-    return this.db.deleteAsync({
+    return this.db.delete({
       TableName: this.tableName,
       Key: { tableName: tableName }
-    }).then(() => {
+    }).promise().then(() => {
       // remove item from cache
-      const removeIndex = AUTO_SCALE_CONFIG_CACHE.findIndex(x => x.tableName === tableName);
+      if (!AUTO_SCALE_CONFIG_CACHE || !AUTO_SCALE_CONFIG_CACHE.length) return true;
+      const remove = AUTO_SCALE_CONFIG_CACHE.find(x => x.tableName === tableName);
+      const removeIndex = AUTO_SCALE_CONFIG_CACHE.indexOf(remove);
       AUTO_SCALE_CONFIG_CACHE.splice(removeIndex, 1);
       return true;
     });
