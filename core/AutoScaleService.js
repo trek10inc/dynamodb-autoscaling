@@ -161,11 +161,10 @@ class AutoScaleService {
 
         // don't scale down if we just scaled up
         if (direction === 'down') {
-          const lastIncrease = moment(
-            getAttribute(table, 'ProvisionedThroughput', point.indexName).LastIncreaseDateTime
-          );
+          const lastIncreaseDateTime = getAttribute(table, 'ProvisionedThroughput', point.indexName).LastIncreaseDateTime;
+          const lastIncrease = lastIncreaseDateTime ? moment(lastIncreaseDateTime) : null;
 
-          if (lastIncrease > moment().subtract(analyzeDuration.asSeconds))
+          if (lastIncrease && lastIncrease > moment().subtract(analyzeDuration))
             return this.logger.log(`${point.tableName}:${point.indexName} was just scaled up, skipping...`);
         }
 
