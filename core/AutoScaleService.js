@@ -23,13 +23,8 @@ class AutoScaleService {
    * @param logService - logging service
    */
   constructor(awsOptions, configRepository, logService) {
-    this.db = Promise.promisifyAll(
-      new aws.DynamoDB(awsOptions || {})
-    );
-
-    this.cw = Promise.promisifyAll(
-      new aws.CloudWatch(awsOptions || {})
-    );
+    this.db = new aws.DynamoDB(awsOptions || {});
+    this.cw = new aws.CloudWatch(awsOptions || {});
 
     this.logger = logService;
     this.configRepository = configRepository;
@@ -50,7 +45,7 @@ class AutoScaleService {
 
     // load all tables from configuration and scale up
     return this.configRepository.load()
-      .map(this.scaleUpTable)
+      .then(configs => configs.map(this.scaleUpTable))
       .then(res => this.logger.log('SCALE UP SUCCEEDED.', res))
       .catch(err => this.logger.log('SCALE UP FAILED!', err));
   }
@@ -64,7 +59,7 @@ class AutoScaleService {
 
     // load all tables from configuration and scale down
     return this.configRepository.load()
-      .map(this.scaleDownTable)
+      .then(configs => configs.map(this.scaleDownTable))
       .then(res => this.logger.log('SCALE DOWN SUCCEEDED.', res))
       .catch(err => this.logger.log('SCALE DOWN FAILED!', err));
   }
@@ -224,7 +219,7 @@ class AutoScaleService {
 
       // send table update request if we have updates
       return updateCounts.total === 0 ? Promise.resolve(table) :
-        this.db.updateTableAsync(tableUpdateRequest);
+        this.db.updateTable(tableUpdateRequest).promise();
     });
   }
 
@@ -234,7 +229,7 @@ class AutoScaleService {
    * @returns {*}
    */
   getTableSchema(tableName) {
-    return this.db.describeTableAsync({ TableName: tableName }).get('Table');
+    return this.db.describeTable({ TableName: tableName }).promise().then(result => result.Table);
   }
 
   /**
@@ -309,7 +304,7 @@ class AutoScaleService {
               });
 
               return Promise.map(getTableMetricsRequests, request => {
-                return self.cw.getMetricStatisticsAsync(request).then(response => {
+                return self.cw.getMetricStatistics(request).promise().then(response => {
                   const data = response.Datapoints[0] || {};
 
                   // set metric and table names for data
