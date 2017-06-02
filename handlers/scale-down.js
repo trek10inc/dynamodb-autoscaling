@@ -14,6 +14,6 @@ module.exports.index = (event, context, callback) => {
   );
 
   service.scaleDownTables()
-    .then(context.succeed)
-    .catch(context.fail);
+    .then(() => callback())
+    .catch(err => callback(err));
 };
