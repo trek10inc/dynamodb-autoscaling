@@ -63,6 +63,8 @@ class AutoScaleConfig {
    * @param rawData - config raw data
    */
   constructor(rawData) {
+    delete rawData.upDuration;
+    delete rawData.downDuration;
     Object.assign(this, DEFAULTS, rawData);
 
     // table name is required
@@ -72,18 +74,20 @@ class AutoScaleConfig {
     this.indexes = Array.isArray(rawData.indexes) ?
 
       // indexes can be supplied as array
-      rawData.indexes.filter(_ => _.indexName)
-        .reduce((indexes, index) => {
-          indexes[index.indexName] = Object.assign({}, DEFAULTS, index);
-          return indexes;
-        }, {}) :
+      rawData.indexes.filter(_ => _.indexName).reduce((indexes, index) => {
+        delete index.upDuration;
+        delete index.downDuration;
+        indexes[index.indexName] = Object.assign({}, DEFAULTS, index);
+        return indexes;
+      }, {}) :
 
       // or as dictionary object
-      Object.getOwnPropertyNames(rawData.indexes || {})
-        .reduce((indexes, indexName) => {
-          indexes[indexName] = Object.assign({}, DEFAULTS, rawData.indexes[indexName]);
-          return indexes;
-        }, {});
+      Object.getOwnPropertyNames(rawData.indexes || {}).reduce((indexes, indexName) => {
+        delete rawData.indexes[indexName].upDuration;
+        delete rawData.indexes[indexName].downDuration;
+        indexes[indexName] = Object.assign({}, DEFAULTS, rawData.indexes[indexName]);
+        return indexes;
+      }, {});
   }
 
   scale(indexName) {

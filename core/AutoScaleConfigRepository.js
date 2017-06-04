@@ -67,9 +67,19 @@ class AutoScaleConfigRepository {
     if (config.constructor.name === 'Object')
       config = AutoScaleConfig.create(config);
 
+    // save config data as plain JSON object
+    const item = Object.assign({}, config);
+    delete item.downDuration;
+    delete item.upDuration;
+
+    if (item.indexes) Object.getOwnPropertyNames(item.indexes).forEach(indexName => {
+      delete item.indexes[indexName].downDuration;
+      delete item.indexes[indexName].upDuration;
+    });
+
     return this.db.put({
       TableName: this.tableName,
-      Item: config
+      Item: item
     }).promise().then(() => {
       // empty cache
       AUTO_SCALE_CONFIG_CACHE = null;
