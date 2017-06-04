@@ -3,7 +3,7 @@
 .ds_store
 *.env*
 coverage
-
+sandbox.js
 
 # Logs
 logs

@@ -44,8 +44,8 @@ class AutoScaleService {
 
     // load all tables from configuration and scale up
     return this.configRepository.load()
-      .then(tables => tables.map(this.scaleUpTable))
-      .then(res => this.logger.log('SCALE UP SUCCEEDED.', res))
+      .then(tables => Promise.all(tables.map(this.scaleUpTable)))
+      .then(res => this.logger.log('SCALE UP SUCCEEDED.'))
       .catch(err => this.logger.log('SCALE UP FAILED!', err));
   }
 
@@ -58,8 +58,8 @@ class AutoScaleService {
 
     // load all tables from configuration and scale down
     return this.configRepository.load()
-      .then(tables => tables.map(this.scaleDownTable))
-      .then(res => this.logger.log('SCALE DOWN SUCCEEDED.', res))
+      .then(tables => Promise.all(tables.map(this.scaleDownTable)))
+      .then(res => this.logger.log('SCALE DOWN SUCCEEDED.'))
       .catch(err => this.logger.log('SCALE DOWN FAILED!', err));
   }
 
@@ -217,7 +217,9 @@ class AutoScaleService {
 
       // send table update request if we have updates
       return updateCounts.total === 0 ? Promise.resolve(table) :
-        this.db.updateTable(tableUpdateRequest).promise();
+        this.db.updateTable(tableUpdateRequest).promise().then(res => {
+          return res.TableDescription;
+        });
     });
   }
 
@@ -302,7 +304,7 @@ class AutoScaleService {
                 ))
               });
 
-              return Promise.map(getTableMetricsRequests, request => {
+              return Promise.all(getTableMetricsRequests.map(request => {
                 return self.cw.getMetricStatistics(request).promise().then(response => {
                   const data = response.Datapoints[0] || {};
 
@@ -316,7 +318,7 @@ class AutoScaleService {
 
                   return data;
                 });
-              });
+              }));
             });
           }
         }
