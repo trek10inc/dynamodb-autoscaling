@@ -50,7 +50,7 @@ class AutoScaleService {
 
     // load all tables from configuration and scale up
     return this.configRepository.load()
-      .map(this.scaleUpTable)
+      .then(tables => tables.map(this.scaleUpTable))
       .then(res => this.logger.log('SCALE UP SUCCEEDED.', res))
       .catch(err => this.logger.log('SCALE UP FAILED!', err));
   }
@@ -64,7 +64,7 @@ class AutoScaleService {
 
     // load all tables from configuration and scale down
     return this.configRepository.load()
-      .map(this.scaleDownTable)
+      .then(tables => tables.map(this.scaleDownTable))
       .then(res => this.logger.log('SCALE DOWN SUCCEEDED.', res))
       .catch(err => this.logger.log('SCALE DOWN FAILED!', err));
   }
