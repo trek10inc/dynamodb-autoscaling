@@ -2,7 +2,6 @@
 
 const aws = require('aws-sdk');
 const moment = require('moment');
-const Promise = require('bluebird');
 
 function getAttribute(tableDescription, attribute, indexName) {
   return !indexName ?
@@ -23,18 +22,13 @@ class AutoScaleService {
    * @param logService - logging service
    */
   constructor(awsOptions, configRepository, logService) {
-    this.db = Promise.promisifyAll(
-      new aws.DynamoDB(awsOptions || {})
-    );
-
-    this.cw = Promise.promisifyAll(
-      new aws.CloudWatch(awsOptions || {})
-    );
+    this.db = new aws.DynamoDB(awsOptions || {});
+    this.cw = new aws.CloudWatch(awsOptions || {});
 
     this.logger = logService;
-    this.configRepository = configRepository;
-
     if (!this.logger) throw new Error('logService is required');
+
+    this.configRepository = configRepository;
     if (!this.configRepository) throw new Error('configRepository is required');
 
     this.scaleUpTable = this.scaleUpTable.bind(this);
@@ -223,7 +217,7 @@ class AutoScaleService {
 
       // send table update request if we have updates
       return updateCounts.total === 0 ? Promise.resolve(table) :
-        this.db.updateTableAsync(tableUpdateRequest);
+        this.db.updateTable(tableUpdateRequest).promise();
     });
   }
 
@@ -233,7 +227,8 @@ class AutoScaleService {
    * @returns {*}
    */
   getTableSchema(tableName) {
-    return this.db.describeTableAsync({ TableName: tableName }).get('Table');
+    return this.db.describeTable({ TableName: tableName })
+      .promise().then(res => res.Table);
   }
 
   /**
@@ -308,7 +303,7 @@ class AutoScaleService {
               });
 
               return Promise.map(getTableMetricsRequests, request => {
-                return self.cw.getMetricStatisticsAsync(request).then(response => {
+                return self.cw.getMetricStatistics(request).promise().then(response => {
                   const data = response.Datapoints[0] || {};
 
                   // set metric and table names for data
