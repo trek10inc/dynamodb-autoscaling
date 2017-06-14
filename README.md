@@ -1,3 +1,7 @@
+# THERE IS AN AWS OFFICIALY SUPPORTED METHOD FOR DOING THIS!
+
+As all good ideas in AWS, eventually their platform expands to include it: https://aws.amazon.com/blogs/aws/new-auto-scaling-for-amazon-dynamodb/. This project may issue critical bug fixes, but should be considered deprecated. 
+
 ### Prerequisites
 
 Install [Serverless framework](https://serverless.com/) globally:
